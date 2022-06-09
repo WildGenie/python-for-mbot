@@ -22,7 +22,7 @@ class mSerial():
 
     def serialPorts(self):
         if sys.platform.startswith('win'):
-            ports = ['COM%s' % (i + 1) for i in range(256)]
+            ports = [f'COM{i + 1}' for i in range(256)]
         elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
             ports = glob.glob('/dev/tty[A-Za-z]*')
         elif sys.platform.startswith('darwin'):
@@ -87,11 +87,9 @@ class mHID():
         
     def inWaiting(self):
         buf = self.dict.device.read(64)
-        l = 0
-        if len(buf)>0:
-            l = buf[0]
+        l = buf[0] if len(buf)>0 else 0
         if l>0:
-            for i in range(0,l):
+            for i in range(l):
                 self.buffer += [buf[i+1]]
         return len(self.buffer)
         
@@ -135,12 +133,10 @@ class mBot():
         sys.exit(0)
         
     def __onRead(self,callback):
-        while 1:
-            if self.exiting:
-                break
+        while 1 and not self.exiting:
             if self.device.isOpen():
                 n = self.device.inWaiting()
-                for i in range(n):
+                for _ in range(n):
                     r = ord(self.device.read())
                     callback(r)
                 sleep(0.01)
@@ -239,19 +235,16 @@ class mBot():
     def readString(self, position):
         l = self.buffer[position]
         position+=1
-        s = ""
-        for i in Range(l):
-            s += self.buffer[position+i].charAt(0)
-        return s
+        return "".join(self.buffer[position+i].charAt(0) for i in Range(l))
     def readDouble(self, position):
         v = [self.buffer[position], self.buffer[position+1],self.buffer[position+2],self.buffer[position+3]]
         return struct.unpack('<f', struct.pack('4B', *v))[0]
 
     def responseValue(self, extID, value):
-        self.__selectors["callback_"+str(extID)](value)
+        self.__selectors[f"callback_{str(extID)}"](value)
         
     def __doCallback(self, extID, callback):
-        self.__selectors["callback_"+str(extID)] = callback
+        self.__selectors[f"callback_{str(extID)}"] = callback
 
     def float2bytes(self,fval):
         val = struct.pack("f",fval)

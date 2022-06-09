@@ -14,9 +14,7 @@ def excepthook(exctype, value, traceback):
 	
 def __onRead():
 	index = 0
-	while(1):
-		if exiting==True:
-			break
+	while 1 and exiting != True:
 		buf = hidapi.hid_read(dev,64)
 		l = buf[0]
 		if index==10:
